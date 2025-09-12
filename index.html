@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>VOID CLOUD — Minecraft Server Hosting</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Icons (Heroicons outline via SVG inline use) -->
+
+  <style>
+    :root{
+      --bg:#0b0b12;
+      --card:#0e0e18cc;
+      --glass:#0f0f1acc;
+      --stroke:rgba(255,255,255,0.08);
+      --text:#e7e8ff;
+      --muted:#b9bbd3;
+      --glow: 0 0 24px var(--brandA), 0 0 48px color-mix(in oklab, var(--brandA) 45%, transparent);
+      --brandA:#8a5cff; /* Void Purple default */
+      --brandB:#4fd1ff; /* Cyber Blue */
+      --brandC:#59f99a; /* Ender Green */
+      --accent:var(--brandA);
+      --card-blur:12px;
+    }
+    [data-theme="purple"]{ --accent: var(--brandA); }
+    [data-theme="blue"]  { --accent: var(--brandB); }
+    [data-theme="green"] { --accent: var(--brandC); }
+
+    * { box-sizing: border-box }
+    html, body { height: 100%; background: radial-gradient(1200px 600px at 80% -10%, #1b1532 0%, #0c0c14 50%, #07070f 100%); }
+    body { color: var(--text); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; }
+
+    /* Futuristic strokes + glass */
+    .glass {
+      backdrop-filter: blur(var(--card-blur));
+      -webkit-backdrop-filter: blur(var(--card-blur));
+      background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 6%, transparent), var(--glass));
+      border: 1px solid var(--stroke);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,0.02);
+    }
+
+    .glow-border {
+      position: relative;
+    }
+    .glow-border::before {
+      content:"";
+      position:absolute; inset:-1px;
+      border-radius: inherit;
+      background: radial-gradient(120px 120px at 10% 10%, color-mix(in oklab, var(--accent) 40%, transparent), transparent 60%),
+                  radial-gradient(120px 120px at 90% 90%, color-mix(in oklab, var(--accent) 40%, transparent), transparent 60%);
+      filter: blur(18px);
+      opacity:.28; pointer-events:none;
+    }
+
+    .neon-text { text-shadow: 0 0 18px color-mix(in oklab, var(--accent) 65%, transparent); }
+    .btn {
+      display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+      padding:.85rem 1.1rem; border-radius:12px;
+      background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 16%, #161626) 0%, #0e0e18 100%);
+      border:1px solid color-mix(in oklab, var(--accent) 40%, rgba(255,255,255,0.06));
+      color:var(--text);
+      box-shadow: inset 0 0 16px rgba(255,255,255,.02), 0 10px 24px rgba(0,0,0,.45);
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 26px color-mix(in oklab, var(--accent) 18%, rgba(0,0,0,.55));
+      border-color: color-mix(in oklab, var(--accent) 72%, rgba(255,255,255,0.12));
+    }
+    .btn-primary{
+      background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 36%, #181830) 0%, color-mix(in oklab, var(--accent) 18%, #0c0c16) 100%);
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.02), 0 10px 30px color-mix(in oklab, var(--accent) 28%, rgba(0,0,0,.6));
+    }
+    .chip {
+      font-family: Orbitron, Inter, sans-serif; letter-spacing:.05em;
+      background: color-mix(in oklab, var(--accent) 24%, #161626);
+      border:1px solid color-mix(in oklab, var(--accent) 66%, rgba(255,255,255,.06));
+      padding:.25rem .6rem; border-radius:999px; font-size:.72rem; opacity:.95
+    }
+
+    /* Navbar */
+    .nav-link { position:relative; }
+    .nav-link::after{
+      content:""; position:absolute; left:0; right:0; bottom:-6px; height:2px; border-radius:2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      transform:scaleX(0); transform-origin:left; transition: transform .2s ease;
+    }
+    .nav-link:hover::after{ transform:scaleX(1) }
+
+    /* Floating voxel cubes */
+    .cube {
+      width:64px; height:64px; position:absolute; transform-style:preserve-3d; animation: floatY 6s ease-in-out infinite;
+      filter: drop-shadow(0 8px 18px color-mix(in oklab, var(--accent) 35%, transparent));
+    }
+    .cube .face {
+      position:absolute; inset:0; background:linear-gradient(145deg, color-mix(in oklab, var(--accent) 24%, #1a1a2b), #0b0b14);
+      border:1px solid rgba(255,255,255,.06); opacity:.96;
+    }
+    .cube .top{ transform:rotateX(90deg) translateZ(32px); }
+    .cube .bottom{ transform:rotateX(-90deg) translateZ(32px); }
+    .cube .left{ transform:rotateY(-90deg) translateZ(32px); }
+    .cube .right{ transform:rotateY(90deg) translateZ(32px); }
+    .cube .front{ transform:translateZ(32px); }
+    .cube .back{ transform:rotateY(180deg) translateZ(32px); }
+    @keyframes floatY {
+      0%,100%{ transform: translateY(0) rotateX(12deg) rotateY(18deg); }
+      50%{ transform: translateY(-14px) rotateX(12deg) rotateY(18deg); }
+    }
+
+    /* Pricing badges */
+    .price { font-family: Orbitron, Inter, sans-serif; }
+
+    /* Testimonials carousel */
+    .carousel-item { opacity:0; transform: translateY(12px) scale(.98); transition: all .35s ease; }
+    .carousel-item.active{ opacity:1; transform: translateY(0) scale(1); }
+
+    /* Accordion */
+    .accordion-content{ max-height:0; overflow:hidden; transition: max-height .3s ease; }
+
+    /* Particles canvas overlay */
+    #bg-canvas { position:fixed; inset:0; z-index:0; pointer-events:none; }
+
+    /* Route sections */
+    section[data-route]{ display:none; }
+    section[data-route].active{ display:block; }
+
+    /* Sticky CTA */
+    .sticky-cta { position: fixed; right: 18px; bottom: 18px; z-index: 60; display:flex; flex-direction:column; gap:.6rem; }
+
+    /* Simple focus glow */
+    .focus-glow:focus, .focus-glow:focus-visible{
+      outline:none; box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 38%, transparent);
+      border-color: color-mix(in oklab, var(--accent) 65%, rgba(255,255,255,.18));
+    }
+
+    /* Simple table styles */
+    .table th, .table td { padding:.85rem; border-bottom:1px solid rgba(255,255,255,.06); }
+    .table th { color:#cfd1ee; text-align:left; font-weight:600; }
+
+    /* Simple tags */
+    .tag { font-size:.72rem; padding:.2rem .5rem; border-radius:999px; border:1px solid rgba(255,255,255,.1) }
+
+    /* Hide scrollbars for certain containers */
+    .no-scrollbar::-webkit-scrollbar{ display:none; }
+    .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+  </style>
+</head>
+<body data-theme="purple" class="relative">
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- NAVBAR -->
+  <header class="sticky top-0 z-50">
+    <div class="glass glow-border">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-[color:var(--accent)]/15 border border-[color:var(--accent)]/30 flex items-center justify-center shadow-[var(--glow)]">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" stroke="currentColor" stroke-width="1.2" class="text-[color:var(--accent)]"/>
+            </svg>
+          </div>
+          <div class="flex flex-col leading-tight">
+            <span class="text-lg font-extrabold tracking-wide" style="font-family: Orbitron">VOID CLOUD</span>
+            <span class="text-xs text-[color:var(--accent)]/85 uppercase tracking-widest">Minecraft Hosting</span>
+          </div>
+        </div>
+
+        <nav class="hidden md:flex items-center gap-6 text-sm">
+          <a href="#home" class="nav-link hover:text-white/95">Home</a>
+          <a href="#plans" class="nav-link hover:text-white/95">Plans</a>
+          <a href="#features" class="nav-link hover:text-white/95">Features</a>
+          <a href="#panel" class="nav-link hover:text-white/95">Panel Demo</a>
+          <a href="#about" class="nav-link hover:text-white/95">About</a>
+          <a href="#support" class="nav-link hover:text-white/95">Support</a>
+          <a href="#blog" class="nav-link hover:text-white/95">Blog</a>
+          <a href="#checkout" class="nav-link hover:text-white/95">Checkout</a>
+        </nav>
+
+        <div class="hidden md:flex items-center gap-3">
+          <div class="chip">99.99% Uptime</div>
+          <button id="themeBtn" class="btn">
+            <span class="w-2.5 h-2.5 rounded-full bg-[color:var(--accent)] shadow-[var(--glow)]"></span>
+            Theme
+          </button>
+          <a href="#plans" class="btn btn-primary">View Plans</a>
+          <a href="#home" class="btn">Get Started</a>
+        </div>
+
+        <button id="menuBtn" class="md:hidden btn" aria-label="Open menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Mobile menu -->
+      <div id="mobileMenu" class="hidden md:hidden px-4 pb-4">
+        <div class="grid gap-2">
+          <a href="#home" class="btn w-full">Home</a>
+          <a href="#plans" class="btn w-full">Plans</a>
+          <a href="#features" class="btn w-full">Features</a>
+          <a href="#panel" class="btn w-full">Panel Demo</a>
+          <a href="#about" class="btn w-full">About</a>
+          <a href="#support" class="btn w-full">Support</a>
+          <a href="#blog" class="btn w-full">Blog</a>
+          <a href="#checkout" class="btn w-full">Checkout</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO (HOME) -->
+  <section data-route="home" id="home" class="relative pt-10 md:pt-16 overflow-hidden">
+    <div class="absolute inset-0 -z-0 pointer-events-none">
+      <!-- Floating cubes -->
+      <div class="cube" style="top:8%; left:6%;">
+        <div class="face top"></div><div class="face bottom"></div><div class="face left"></div><div class="face right"></div><div class="face front"></div><div class="face back"></div>
+      </div>
+      <div class="cube" style="top:22%; right:12%; animation-delay:.7s">
+        <div class="face top"></div><div class="face bottom"></div><div class="face left"></div><div class="face right"></div><div class="face front"></div><div class="face back"></div>
+      </div>
+      <div class="cube" style="bottom:12%; left:18%; animation-delay:1.2s">
+        <div class="face top"></div><div class="face bottom"></div><div class="face left"></div><div class="face right"></div><div class="face front"></div><div class="face back"></div>
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="grid lg:grid-cols-2 gap-10 items-center">
+        <div class="space-y-6">
+          <span class="chip inline-flex items-center gap-2">
+            <span class="h-1.5 w-1.5 rounded-full bg-[color:var(--accent)] shadow-[var(--glow)]"></span>
+            Elite hosting for every Minecrafter
+          </span>
+          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight neon-text" style="font-family: Orbitron">
+            UNLEASH YOUR WORLD WITH VOID CLOUD
+          </h1>
+          <p class="text-lg text-white/75 max-w-xl">
+            Powerful, lag-free Minecraft servers with instant setup, DDoS protection, and a custom control panel.
+          </p>
+          <div class="flex flex-wrap gap-3">
+            <a href="#checkout" class="btn btn-primary">Get Started</a>
+            <a href="#plans" class="btn">View Plans</a>
+          </div>
+
+          <!-- Feature quick highlights -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+            <div class="glass glow-border rounded-xl p-3 text-center">
+              <div class="text-sm text-white/80">99.99% Uptime</div>
+            </div>
+            <div class="glass glow-border rounded-xl p-3 text-center">
+              <div class="text-sm text-white/80">Instant Setup</div>
+            </div>
+            <div class="glass glow-border rounded-xl p-3 text-center">
+              <div class="text-sm text-white/80">Free Subdomain</div>
+            </div>
+            <div class="glass glow-border rounded-xl p-3 text-center">
+              <div class="text-sm text-white/80">DDoS Protection</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Animated Minecraft server showcase (SVG banners) -->
+        <div class="relative">
+          <div class="absolute -top-10 -left-6 blur-3xl rounded-full w-56 h-56 bg-[color:var(--accent)]/15"></div>
+          <div class="absolute -bottom-10 -right-6 blur-3xl rounded-full w-56 h-56 bg-[color:var(--accent)]/10"></div>
+
+          <div class="space-y-4">
+            <!-- Server card 1 -->
+            <div class="glass glow-border rounded-2xl p-4 border border-white/5">
+              <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-lg bg-[color:var(--accent)]/20 border border-[color:var(--accent)]/40 flex items-center justify-center">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.4"/>
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <div class="font-semibold">Survival Realm</div>
+                  <div class="text-xs text-white/60">mc.voidcloud.gg</div>
+                </div>
+                <span class="tag bg-emerald-400/10 text-emerald-300 border-emerald-400/30">Online</span>
+              </div>
+              <div class="mt-4 h-28 rounded-xl bg-gradient-to-br from-[#1b213a] to-[#121422] border border-white/5 p-3 overflow-hidden">
+                <!-- Banner as blocks -->
+                <div class="flex gap-2">
+                  <div class="w-10 h-10 rounded-md bg-emerald-500/30 border border-emerald-400/30"></div>
+                  <div class="w-10 h-10 rounded-md bg-yellow-400/30 border border-yellow-300/30"></div>
+                  <div class="w-10 h-10 rounded-md bg-red-400/30 border border-red-300/30"></div>
+                  <div class="w-10 h-10 rounded-md bg-blue-400/30 border border-blue-300/30"></div>
+                </div>
+                <div class="mt-3 text-xs text-white/70">Players: 18/50 • TPS: 20 • Mods: 24</div>
+              </div>
+            </div>
+            <!-- Server card 2 -->
+            <div class="glass glow-border rounded-2xl p-4 border border-white/5">
+              <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-lg bg-[color:var(--accent)]/20 border border-[color:var(--accent)]/40 flex items-center justify-center">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3l8 4v10l-8 4-8-4V7l8-4z" stroke="currentColor" stroke-width="1.4"/>
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <div class="font-semibold">Skyblock Galaxy</div>
+                  <div class="text-xs text-white/60">play.voidcloud.gg</div>
+                </div>
+                <span class="tag bg-yellow-400/10 text-yellow-300 border-yellow-400/30">Featured</span>
+              </div>
+              <div class="mt-4 h-28 rounded-xl bg-gradient-to-br from-[#1b213a] to-[#121422] border border-white/5 p-3 overflow-hidden">
+                <div class="flex gap-2">
+                  <div class="w-14 h-8 rounded-md bg-purple-400/30 border border-purple-300/30"></div>
+                  <div class="w-8 h-8 rounded-md bg-teal-400/30 border border-teal-300/30"></div>
+                  <div class="w-20 h-8 rounded-md bg-rose-400/30 border border-rose-300/30"></div>
+                </div>
+                <div class="mt-3 text-xs text-white/70">Players: 42/100 • TPS: 20 • Mods: 12</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Testimonials carousel -->
+          <div class="mt-6 glass glow-border rounded-2xl p-4">
+            <div id="testimonials" class="relative min-h-[88px]">
+              <div class="carousel-item active">
+                <p class="text-white/90">“Rock-solid performance. Our modded server flies on VOID CLOUD.”</p>
+                <div class="text-xs text-white/60 mt-2">— NOT X, Server Owner</div>
+              </div>
+              <div class="carousel-item absolute inset-0">
+                <p class="text-white/90">“The panel is clean and powerful. One-click modpacks are a dream.”</p>
+                <div class="text-xs text-white/60 mt-2">— NOT X, Admin</div>
+              </div>
+              <div class="carousel-item absolute inset-0">
+                <p class="text-white/90">“Support replied in minutes and solved our migration flawlessly.”</p>
+                <div class="text-xs text-white/60 mt-2">— NOT X, Community Lead</div>
+              </div>
+            </div>
+            <div class="mt-3 flex gap-2">
+              <button class="btn px-3" data-test-prev>Prev</button>
+              <button class="btn px-3" data-test-next>Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Server locations map -->
+      <div class="mt-14 glass glow-border rounded-2xl p-6">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <div class="text-xl font-semibold">Global Network</div>
+            <div class="text-sm text-white/70">NA • EU • Asia — low-latency routes</div>
+          </div>
+          <div class="flex gap-2">
+            <span class="tag bg-[color:var(--accent)]/15 text-[color:var(--accent)] border-[color:var(--accent)]/30">Optimized Routing</span>
+            <span class="tag bg-emerald-400/10 text-emerald-300 border-emerald-400/30">DDoS Protected</span>
+          </div>
+        </div>
+        <div class="mt-4 relative overflow-hidden rounded-xl border border-white/5">
+          <!-- Simple SVG world map -->
+          <svg viewBox="0 0 800 360" class="w-full h-auto">
+            <defs>
+              <radialGradient id="pin" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="var(--accent)"/>
+                <stop offset="100%" stop-color="transparent"/>
+              </radialGradient>
+            </defs>
+            <rect x="0" y="0" width="800" height="360" fill="#0a0a13"/>
+            <g fill="#1b2140">
+              <path d="M50,170 L200,150 L300,160 L330,180 L360,170 L400,190 L420,220 L380,230 L300,220 L210,210 L120,190 Z" opacity=".7"/>
+              <path d="M420,170 L520,150 L600,160 L630,180 L660,170 L720,200 L740,220 L680,240 L600,220 L500,210 L440,190 Z" opacity=".5"/>
+            </g>
+            <!-- Pins -->
+            <circle cx="220" cy="180" r="10" fill="url(#pin)"/><circle cx="220" cy="180" r="3" fill="var(--accent)"/>
+            <circle cx="420" cy="160" r="10" fill="url(#pin)"/><circle cx="420" cy="160" r="3" fill="var(--accent)"/>
+            <circle cx="620" cy="190" r="10" fill="url(#pin)"/><circle cx="620" cy="190" r="3" fill="var(--accent)"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLANS & PRICING -->
+  <section data-route="plans" id="plans" class="py-14">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-end justify-between gap-4 flex-wrap">
+        <div>
+          <h2 class="text-3xl font-extrabold neon-text" style="font-family: Orbitron">Plans & Pricing</h2>
+          <p class="text-white/70">Choose monthly or yearly billing</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-white/70">Monthly</span>
+          <button id="billingToggle" class="relative w-16 h-8 rounded-full bg-white/10 border border-white/10">
+            <span class="absolute top-1 left-1 h-6 w-6 rounded-full bg-[color:var(--accent)] transition-all"></span>
+          </button>
+          <span class="text-sm text-white/70">Yearly <span class="chip ml-2">Save 15%</span></span>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-5 mt-8">
+        <!-- Card template repeated -->
+        <div class="glass glow-border rounded-2xl p-5 flex flex-col" data-plan="start">
+          <div class="flex items-center justify-between">
+            <div class="font-semibold">Void Start</div>
+            <span class="tag bg-white/10">Starter</span>
+          </div>
+          <div class="mt-1 text-white/70 text-sm">2GB RAM • 10 Players</div>
+          <div class="mt-4 price text-3xl font-extrabold">$<span data-price>3.99</span><span class="text-sm text-white/60">/mo</span></div>
+          <ul class="mt-4 space-y-2 text-sm text-white/80">
+            <li>• Standard CPU</li>
+            <li>• 10 GB NVMe</li>
+            <li>• 1 Backup / week</li>
+            <li>• Basic Support</li>
+          </ul>
+          <button class="btn btn-primary mt-5 w-full" data-add-cart='{"id":"start","name":"Void Start","monthly":3.99,"yearly":40.69,"ram":"2GB","players":"10"}'>Choose Plan</button>
+        </div>
+
+        <div class="glass glow-border rounded-2xl p-5 flex flex-col" data-plan="plus">
+          <div class="flex items-center justify-between">
+            <div class="font-semibold">Void Plus</div>
+            <span class="tag bg-white/10">Popular</span>
+          </div>
+          <div class="mt-1 text-white/70 text-sm">4GB RAM • 25 Players</div>
+          <div class="mt-4 price text-3xl font-extrabold">$<span data-price>7.99</span><span class="text-sm text-white/60">/mo</span></div>
+          <ul class="mt-4 space-y-2 text-sm text-white/80">
+            <li>• Enhanced CPU</li>
+            <li>• 20 GB NVMe</li>
+            <li>• 2 Backups / week</li>
+            <li>• Standard Support</li>
+          </ul>
+          <button class="btn btn-primary mt-5 w-full" data-add-cart='{"id":"plus","name":"Void Plus","monthly":7.99,"yearly":81.49,"ram":"4GB","players":"25"}'>Choose Plan</button>
+        </div>
+
+        <div class="glass glow-border rounded-2xl p-5 flex flex-col" data-plan="pro">
+          <div class="flex items-center justify-between">
+            <div class="font-semibold">Void Pro</div>
+            <span class="tag bg-white/10">Creator</span>
+          </div>
+          <div class="mt-1 text-white/70 text-sm">8GB RAM • 50+ Players</div>
+          <div class="mt-4 price text-3xl font-extrabold">$<span data-price>14.99</span><span class="text-sm text-white/60">/mo</span></div>
+          <ul class="mt-4 space-y-2 text-sm text-white/80">
+            <li>• High-Clock CPU</li>
+            <li>• 40 GB NVMe</li>
+            <li>• Daily Backups</li>
+            <li>• Priority Support</li>
+          </ul>
+          <button class="btn btn-primary mt-5 w-full" data-add-cart='{"id":"pro","name":"Void Pro","monthly":14.99,"yearly":152.89,"ram":"8GB","players":"50+"}'>Choose Plan</button>
+        </div>
+
+        <div class="glass glow-border rounded-2xl p-5 flex flex-col" data-plan="ultra">
+          <div class="flex items-center justify-between">
+            <div class="font-semibold">Void Ultra</div>
+            <span class="tag bg-white/10">Unlimited</span>
+          </div>
+          <div class="mt-1 text-white/70 text-sm">16GB RAM • Unlimited Players</div>
+          <div class="mt-4 price text-3xl font-extrabold">$<span data-price>24.99</span><span class="text-sm text-white/60">/mo</span></div>
+          <ul class="mt-4 space-y-2 text-sm text-white/80">
+            <li>• Premium CPU</li>
+            <li>• 80 GB NVMe</li>
+            <li>• 2x Daily Backups</li>
+            <li>• 24/7 Elite Support</li>
+          </ul>
+          <button class="btn btn-primary mt-5 w-full" data-add-cart='{"id":"ultra","name":"Void Ultra","monthly":24.99,"yearly":254.89,"ram":"16GB","players":"Unlimited"}'>Choose Plan</button>
+        </div>
+      </div>
+
+      <!-- Comparison Table -->
+      <div class="mt-10 glass glow-border rounded-2xl p-6 overflow-hidden">
+        <div class="text-xl font-semibold">Compare Features</div>
+        <div class="mt-4 overflow-auto no-scrollbar">
+          <table class="table min-w-[700px]">
+            <thead>
+            <tr>
+              <th>Plan</th><th>RAM</th><th>CPU</th><th>NVMe</th><th>Mods</th><th>Backups</th><th>Support</th>
+            </tr>
+            </thead>
+            <tbody class="text-white/80">
+            <tr><td>Void Start</td><td>2GB</td><td>Standard</td><td>10GB</td><td>Yes</td><td>Weekly</td><td>Basic</td></tr>
+            <tr><td>Void Plus</td><td>4GB</td><td>Enhanced</td><td>20GB</td><td>Yes</td><td>2x/Week</td><td>Standard</td></tr>
+            <tr><td>Void Pro</td><td>8GB</td><td>High-Clock</td><td>40GB</td><td>Yes</td><td>Daily</td><td>Priority</td></tr>
+            <tr><td>Void Ultra</td><td>16GB</td><td>Premium</td><td>80GB</td><td>Yes</td><td>2x Daily</td><td>Elite</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section data-route="features" id="features" class="py-14">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-3xl font-extrabold neon-text" style="font-family: Orbitron">Features</h2>
+
+      <div class="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Feature cards -->
+        <div class="glass glow-border rounded-2xl p-5">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-lg bg-[color:var(--accent)]/20 border border-[color:var(--accent)]/40 flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M7 12h10M7 8h10M7 16h10" stroke="currentColor" stroke-width="1.6"/></svg>
+            </div>
+            <div class="font-semibold">One-Click Modpack Install</div>
+          </div>
+          <p class="mt-2 text-white/70 text-sm">Install popular modpacks in seconds—no manual uploads.</p>
+        </div>
+
+        <div class="glass glow-border rounded-2xl p-5">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-lg bg-[color:var(--accent)]/20 border border-[color:var(--accent)]/40 flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M7 12l5-5 5 5M7 18h10" stroke="currentColor" stroke-width="1.6"/></svg>
+            </div>
+            <div class="font-semibold">Bedrock & Java Support</div>
+          </div>
+          <p class="mt-2 text-white/70 text-sm">Run both editions with smooth compatibility layers.</p>
+        </div>
+
+        <div class="glass glow-border rounded-2xl p-5">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-lg bg-[color:var(--accent)]/20 border border-[color:var(--accent)]/40 flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6h12v12H6z" stroke="currentColor" stroke-width="1.6"/></svg>
+            </div>
+            <div class="font-semibold">Free Backups</div>
+          </div>
+          <p class="mt-2 text-white/70 text-sm">Automatic backups keep your world safe and sound.</p>
+        </div>
+
+        <div class="glass glow-border rounded-2xl p-5">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-lg bg-[color:var(--accent)]/20 border border-[color:var(--accent)]/40 flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="1.6"/></svg>
+            </div>
+            <div class="font-semibold">24/7 Support</div>
+          </div>
+          <p class="mt-2 text-white/70 text-sm">Real humans ready to help day or night.</p>
+        </div>
+
+        <div class="glass glow-border rounded-2xl p-5">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-lg bg-[color:var(--accent)]/20 border border-[color:var(--accent)]/40 flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16v10H4z" stroke="currentColor" stroke-width="1.6"/></svg>
+            </div>
+            <div class="font-semibold">Custom Control Panel</div>
+          </div>
+          <p class="mt-2 text-white/70 text-sm">Clean, fast, and built for creators.</p>
+        </div>
+
+        <div class="glass glow-border rounded-2xl p-5">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-lg bg-[color:var(--accent)]/20 border border-[color:var(--accent)]/40 flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 4l6 8-6 8-6-8 6-8z" stroke="currentColor" stroke-width="1.6"/></svg>
+            </div>
+            <div class="font-semibold">Auto-Scaling Servers</div>
+          </div>
+          <p class="mt-2 text-white/70 text-sm">Scale resources in real time for peak events.</p>
+        </div>
+      </div>
+
+      <!-- Accordion -->
+      <div class="mt-10 grid md:grid-cols-2 gap-5">
+        <div class="glass glow-border rounded-2xl p-5">
+          <button class="w-full text-left font-semibold flex justify-between items-center" data-acc>
+            What’s included with every plan?
+            <span class="text-white/60">+</span>
+          </button>
+          <div class="accordion-content text-white/70 text-sm mt-2">
+            DDoS protection, backups, custom panel access, and friendly support.
+          </div>
+        </div>
+        <div class="glass glow-border rounded-2xl p-5">
+          <button class="w-full text-left font-semibold flex justify-between items-center" data-acc>
+            Can I upgrade later?
+            <span class="text-white/60">+</span>
+          </button>
+          <div class="accordion-content text-white/70 text-sm mt-2">
+            Absolutely—scale up RAM/CPU anytime without downtime.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANEL DEMO -->
+  <section data-route="panel" id="panel" class="py-14">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-end justify-between gap-4 flex-wrap">
+        <div>
+          <h2 class="text-3xl font-extrabold neon-text" style="font-family: Orbitron">Panel Demo</h2>
+          <p class="text-white/70">Interactive demo of the server dashboard</p>
+        </div>
+        <div class="flex gap-2">
+          <button id="demoTry" class="btn btn-primary">Try Demo</button>
+          <button id="viewDash" class="btn">View Dashboard</button>
+        </div>
+      </div>
+
+      <div class="mt-6 grid lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 glass glow-border rounded-2xl p-5">
+          <div class="flex items-center justify-between">
+            <div class="font-semibold">Server: MyVoid-01</div>
+            <div class="flex items-center gap-2">
+              <span class="tag" id="srvStatus">Stopped</span>
+              <button id="btnStart" class="btn px-3">Start</button>
+              <button id="btnStop"  class="btn px-3">Stop</button>
+              <button id="btnRestart" class="btn px-3">Restart</button>
+            </div>
+          </div>
+
+          <div class="mt-4 grid sm:grid-cols-3 gap-4">
+            <div class="glass rounded-xl p-4">
+              <div class="text-sm text-white/70">CPU</div>
+              <div class="text-2xl font-bold"><span id="metCpu">0</span>%</div>
+            </div>
+            <div class="glass rounded-xl p-4">
+              <div class="text-sm text-white/70">RAM</div>
+              <div class="text-2xl font-bold"><span id="metRam">0</span>%</div>
+            </div>
+            <div class="glass rounded-xl p-4">
+              <div class="text-sm text-white/70">Players</div>
+              <div class="text-2xl font-bold"><span id="metPlr">0</span>/20</div>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <div class="text-sm mb-2 text-white/80">Console</div>
+            <div id="console" class="glass rounded-xl p-3 h-44 overflow-auto no-scrollbar text-xs font-mono text-white/90"></div>
+            <div class="mt-2 flex gap-2">
+              <input id="cmd" class="w-full glass rounded-lg p-2 border border-white/10 focus-glow bg-transparent" placeholder="Type command (demo)"/>
+              <button id="sendCmd" class="btn px-4">Send</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass glow-border rounded-2xl p-5">
+          <div class="font-semibold">Actions</div>
+          <div class="mt-3 grid gap-2">
+            <button class="btn w-full" id="oneClickMod">One-Click Modpack</button>
+            <button class="btn w-full" id="createBackup">Create Backup</button>
+            <button class="btn w-full" id="openFiles">File Manager</button>
+          </div>
+
+          <div class="mt-6">
+            <div class="text-sm text-white/70 mb-1">Recent Backups</div>
+            <div id="backups" class="text-xs text-white/80 space-y-1">
+              <div>none</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section data-route="about" id="about" class="py-14">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-3xl font-extrabold neon-text" style="font-family: Orbitron">About VOID CLOUD</h2>
+      <div class="mt-6 grid lg:grid-cols-2 gap-6">
+        <div class="glass glow-border rounded-2xl p-6 leading-relaxed text-white/80">
+          VOID CLOUD began as a small group of server nerds obsessed with performance. Today we power thousands of worlds with cutting-edge hardware and a creator-first panel.
+          <div class="mt-4 chip inline-block">Vision: “Elite hosting for every Minecrafter.”</div>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <!-- Team -->
+          <div class="glass glow-border rounded-2xl p-5">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-full bg-[color:var(--accent)]/20 border border-[color:var(--accent)]/40"></div>
+              <div>
+                <div class="font-semibold">NOT X</div>
+                <div class="text-xs text-white/60">Founder & CEO</div>
+              </div>
+            </div>
+          </div>
+          <div class="glass glow-border rounded-2xl p-5">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-full bg-[color:var(--accent)]/20 border border-[color:var(--accent)]/40"></div>
+              <div>
+                <div class="font-semibold">NOT X</div>
+                <div class="text-xs text-white/60">Head of Infra</div>
+              </div>
+            </div>
+          </div>
+          <div class="glass glow-border rounded-2xl p-5">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-full bg-[color:var(--accent)]/20 border border-[color:var(--accent)]/40"></div>
+              <div>
+                <div class="font-semibold">NOT X</div>
+                <div class="text-xs text-white/60">Support Lead</div>
+              </div>
+            </div>
+          </div>
+          <div class="glass glow-border rounded-2xl p-5">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-full bg-[color:var(--accent)]/20 border border-[color:var(--accent)]/40"></div>
+              <div>
+                <div class="font-semibold">NOT X</div>
+                <div class="text-xs text-white/60">Panel Engineer</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status quick link -->
+      <div class="mt-8 glass glow-border rounded-2xl p-5 flex items-center justify-between">
+        <div>
+          <div class="font-semibold">Network Status</div>
+          <div class="text-sm text-white/70">All systems operational</div>
+        </div>
+        <a href="#status" class="btn">View Status</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUPPORT / FAQ -->
+  <section data-route="support" id="support" class="py-14">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-3xl font-extrabold neon-text" style="font-family: Orbitron">Support & FAQ</h2>
+      <div class="mt-6 grid lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2">
+          <div class="glass glow-border rounded-2xl p-4">
+            <input id="faqSearch" placeholder="Search the FAQ..." class="w-full glass rounded-xl p-3 border border-white/10 bg-transparent focus-glow">
+          </div>
+
+          <div id="faqList" class="mt-4 grid gap-4">
+            <div class="glass glow-border rounded-2xl p-5" data-faq="upgrade plan change billing">
+              <button class="w-full text-left font-semibold flex justify-between items-center" data-acc>
+                How do I upgrade my plan?
+                <span class="text-white/60">+</span>
+              </button>
+              <div class="accordion-content text-white/70 text-sm mt-2">
+                Go to Plans → choose a higher tier. Billing updates instantly with no downtime.
+              </div>
+            </div>
+            <div class="glass glow-border rounded-2xl p-5" data-faq="backups restore safety">
+              <button class="w-full text-left font-semibold flex justify-between items-center" data-acc>
+                Are backups free?
+                <span class="text-white/60">+</span>
+              </button>
+              <div class="accordion-content text-white/70 text-sm mt-2">
+                Yes. Frequency depends on your plan. You can restore from the panel anytime.
+              </div>
+            </div>
+            <div class="glass glow-border rounded-2xl p-5" data-faq="latency location ping region">
+              <button class="w-full text-left font-semibold flex justify-between items-center" data-acc>
+                Which location gives me the best ping?
+                <span class="text-white/60">+</span>
+              </button>
+              <div class="accordion-content text-white/70 text-sm mt-2">
+                Pick the region closest to your players. We have NA, EU, and Asia.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <!-- Contact form (Demo) -->
+          <div class="glass glow-border rounded-2xl p-5">
+            <div class="font-semibold mb-2">Contact Support (Demo)</div>
+            <div class="space-y-2">
+              <input id="cName" placeholder="Your name" class="w-full glass rounded-xl p-3 border border-white/10 bg-transparent focus-glow">
+              <input id="cEmail" placeholder="Email" class="w-full glass rounded-xl p-3 border border-white/10 bg-transparent focus-glow">
+              <textarea id="cMsg" placeholder="How can we help?" rows="4" class="w-full glass rounded-xl p-3 border border-white/10 bg-transparent focus-glow"></textarea>
+              <button id="sendContact" class="btn btn-primary w-full">Send Message</button>
+              <div class="text-xs text-white/60">Demo only. No emails are sent.</div>
+            </div>
+          </div>
+
+          <!-- Live Chat (Mock) -->
+          <div class="mt-4 glass glow-border rounded-2xl p-5">
+            <div class="flex items-center justify-between">
+              <div class="font-semibold">Live Chat (Mock)</div>
+              <button id="openChat" class="btn px-3">Open</button>
+            </div>
+            <div class="text-xs text-white/60 mt-1">Try it—sends simulated bot replies.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating chat widget -->
+    <div id="chatWidget" class="hidden fixed bottom-24 right-4 w-80 glass glow-border rounded-2xl p-4 z-50">
+      <div class="flex items-center justify-between">
+        <div class="font-semibold">VOID CLOUD — Support Bot</div>
+        <button id="closeChat" class="btn px-3">Close</button>
+      </div>
+      <div id="chatMsgs" class="mt-3 h-40 overflow-auto no-scrollbar text-sm space-y-2">
+        <div class="text-white/80">Hi! Ask me about plans or features.</div>
+      </div>
+      <div class="mt-2 flex gap-2">
+        <input id="chatInput" placeholder="Type a message..." class="w-full glass rounded-lg p-2 border border-white/10 bg-transparent focus-glow">
+        <button id="chatSend" class="btn px-3">Send</button>
+      </div>
+      <div class="text-[10px] text-white/50 mt-1">Mock chat for demo purposes.</div>
+    </div>
+  </section>
+
+  <!-- STATUS -->
+  <section data-route="status" id="status" class="py-14">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-3xl font-extrabold neon-text" style="font-family: Orbitron">Network Status</h2>
+      <div class="mt-6 glass glow-border rounded-2xl p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <div>Panel</div><div class="tag bg-emerald-400/10 text-emerald-300 border-emerald-400/30">Operational</div>
+        </div>
+        <div class="flex items-center justify-between">
+          <div>API</div><div class="tag bg-emerald-400/10 text-emerald-300 border-emerald-400/30">Operational</div>
+        </div>
+        <div class="flex items-center justify-between">
+          <div>Nodes</div><div class="tag bg-emerald-400/10 text-emerald-300 border-emerald-400/30">Operational</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOG / UPDATES -->
+  <section data-route="blog" id="blog" class="py-14">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-end justify-between">
+        <h2 class="text-3xl font-extrabold neon-text" style="font-family: Orbitron">Blog & Updates</h2>
+        <div class="chip">News • Tutorials • MC Updates</div>
+      </div>
+      <div class="mt-6 grid md:grid-cols-3 gap-5">
+        <article class="glass glow-border rounded-2xl p-5 hover:translate-y-[-2px] transition">
+          <div class="text-sm text-[color:var(--accent)]">Update</div>
+          <h3 class="font-semibold mt-1">New NA Node Online</h3>
+          <p class="text-white/70 text-sm mt-2">Lower latency for East Coast players with our latest deployment.</p>
+          <button class="btn mt-3">Read</button>
+        </article>
+        <article class="glass glow-border rounded-2xl p-5 hover:translate-y-[-2px] transition">
+          <div class="text-sm text-[color:var(--accent)]">Tutorial</div>
+          <h3 class="font-semibold mt-1">Install Fabric Modpacks</h3>
+          <p class="text-white/70 text-sm mt-2">A quick guide to launching your modded world in minutes.</p>
+          <button class="btn mt-3">Read</button>
+        </article>
+        <article class="glass glow-border rounded-2xl p-5 hover:translate-y-[-2px] transition">
+          <div class="text-sm text-[color:var(--accent)]">Feature</div>
+          <h3 class="font-semibold mt-1">Auto-Scaling Arrives</h3>
+          <p class="text-white/70 text-sm mt-2">Your server now scales resources during peak events automatically.</p>
+          <button class="btn mt-3">Read</button>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHECKOUT / PAYMENT (DEMO) -->
+  <section data-route="checkout" id="checkout" class="py-14">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-end justify-between flex-wrap gap-4">
+        <div>
+          <h2 class="text-3xl font-extrabold neon-text" style="font-family: Orbitron">Checkout</h2>
+          <div class="text-white/70">DM me to develope any things .</div>
+        </div>
+        <div class="flex gap-2">
+          <a href="#plans" class="btn">Back to Plans</a>
+        </div>
+      </div>
+
+      <div class="mt-6 grid lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 glass glow-border rounded-2xl p-5">
+          <div class="font-semibold">Your Cart</div>
+          <div id="cartList" class="mt-3 space-y-3 text-sm"></div>
+          <div class="mt-3 flex items-center gap-2">
+            <input id="coupon" class="glass rounded-lg p-2 border border-white/10 bg-transparent focus-glow" placeholder="Coupon code (try: VOID10)">
+            <button id="applyCoupon" class="btn">Apply</button>
+          </div>
+        </div>
+        <div class="glass glow-border rounded-2xl p-5">
+          <div class="font-semibold">Payment</div>
+          <div class="mt-3 grid gap-2 text-sm">
+            <label class="flex items-center gap-2"><input type="radio" name="pay" value="PayPal" checked> PayPal</label>
+            <label class="flex items-center gap-2"><input type="radio" name="pay" value="Stripe"> Stripe</label>
+            <label class="flex items-center gap-2"><input type="radio" name="pay" value="Crypto"> Crypto</label>
+          </div>
+          <div class="mt-4 border-t border-white/10 pt-3">
+            <div class="flex items-center justify-between text-sm"><span>Subtotal</span><span id="subTotal">$0.00</span></div>
+            <div class="flex items-center justify-between text-sm"><span>Discount</span><span id="discountAmt">-$0.00</span></div>
+            <div class="flex items-center justify-between text-base font-semibold mt-1"><span>Total</span><span id="grandTotal">$0.00</span></div>
+          </div>
+          <button id="makePayment" class="btn btn-primary w-full mt-4">Make Payment</button>
+          <div class="text-xs text-white/60 mt-2">DM in discord to make payment .</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOGIN / REGISTER (NO PASSWORD FIELDS) -->
+  <section data-route="auth" id="auth" class="py-14">
+    <div class="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="glass glow-border rounded-2xl p-6 text-center">
+        <h2 class="text-2xl font-extrabold neon-text" style="font-family: Orbitron">Sign in to VOID CLOUD</h2>
+        <div class="text-xs text-white/60 mt-1">YOU CANT BROO (SOON!).</div>
+        <div class="mt-5 grid gap-3">
+          <button class="btn btn-primary w-full" id="loginGoogle">Continue with Google</button>
+          <button class="btn w-full" id="loginDiscord">Continue with Discord</button>
+        </div>
+        <div class="mt-4 text-xs text-white/60"> ASK NOT X for login opton.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="mt-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="glass glow-border rounded-2xl p-6">
+        <div class="grid md:grid-cols-4 gap-6">
+          <div>
+            <div class="font-extrabold text-lg" style="font-family: Orbitron">VOID CLOUD</div>
+            <div class="text-sm text-white/70 mt-1">Lag-free Minecraft hosting with a creator-first panel.</div>
+          </div>
+          <div>
+            <div class="font-semibold mb-2">Quick Links</div>
+            <div class="grid gap-1 text-sm">
+              <a href="#home" class="hover:underline">Home</a>
+              <a href="#plans" class="hover:underline">Plans</a>
+              <a href="#features" class="hover:underline">Features</a>
+              <a href="#panel" class="hover:underline">Panel Demo</a>
+            </div>
+          </div>
+          <div>
+            <div class="font-semibold mb-2">Company</div>
+            <div class="grid gap-1 text-sm">
+              <a href="#about" class="hover:underline">About</a>
+              <a href="#support" class="hover:underline">Support</a>
+              <a href="#status" class="hover:underline">Network Status</a>
+              <a href="#auth" class="hover:underline">Login</a>
+            </div>
+          </div>
+          <div>
+            <div class="font-semibold mb-2">Social</div>
+            <div class="flex gap-2">
+              <a class="btn px-3" target="_blank" rel="noopener">Discord</a>
+              <a class="btn px-3" target="_blank" rel="noopener">YouTube</a>
+              <a class="btn px-3" target="_blank" rel="noopener">Twitter</a>
+              <a class="btn px-3" target="_blank" rel="noopener">GitHub</a>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 text-xs text-white/50">© <span id="year"></span> VOID CLOUD. All rights reserved.</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Sticky CTA -->
+  <div class="sticky-cta">
+    <a href="#checkout" class="btn btn-primary">Get Started</a>
+    <a href="#plans" class="btn">View Plans</a>
+  </div>
+
+  <script>
+    // Util: format currency
+    const fmt = (n) => "$" + n.toFixed(2);
+
+    // Simple router (hash-based)
+    const routes = Array.from(document.querySelectorAll('section[data-route]'));
+    function showRoute(hash){
+      const name = (hash || location.hash || "#home").replace("#","");
+      routes.forEach(s => s.classList.toggle("active", s.id === name));
+      // Close mobile menu
+      document.getElementById('mobileMenu').classList.add('hidden');
+      // Scroll to top of section
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    window.addEventListener('hashchange', () => showRoute());
+    showRoute();
+
+    // Navbar mobile toggle
+    document.getElementById('menuBtn').addEventListener('click', () => {
+      document.getElementById('mobileMenu').classList.toggle('hidden');
+    });
+
+    // Theme switcher: purple -> blue -> green
+    const themeOrder = ["purple", "blue", "green"];
+    document.getElementById('themeBtn').addEventListener('click', () => {
+      const cur = document.body.getAttribute('data-theme') || 'purple';
+      const idx = (themeOrder.indexOf(cur) + 1) % themeOrder.length;
+      document.body.setAttribute('data-theme', themeOrder[idx]);
+    });
+
+    // Particles background with direction reacting to mouse movement
+    (function(){
+      const c = document.getElementById('bg-canvas');
+      const ctx = c.getContext('2d');
+      let W, H, particles = [];
+      let xDir = 0.3; // horizontal drift; flips with mouse
+      let lastX = null;
+
+      function resize(){
+        W = c.width = window.innerWidth;
+        H = c.height = window.innerHeight;
+        particles = Array.from({length: Math.min(140, Math.floor(W*H / 12000))}, () => ({
+          x: Math.random()*W,
+          y: Math.random()*H,
+          r: Math.random()*2.2+0.6,
+          s: Math.random()*0.6+0.2,
+          c: `rgba(${150+Math.floor(Math.random()*80)}, ${180+Math.floor(Math.random()*40)}, 255, ${Math.random()*0.25+0.15})`
+        }));
+      }
+      window.addEventListener('resize', resize); resize();
+
+      window.addEventListener('mousemove', (e) => {
+        if(lastX !== null){
+          const dx = e.clientX - lastX;
+          xDir = Math.max(-0.6, Math.min(0.6, dx/100));
+        }
+        lastX = e.clientX;
+      });
+
+      function tick(){
+        ctx.clearRect(0,0,W,H);
+        for(const p of particles){
+          p.y += p.s;
+          p.x += xDir * p.s;
+          if(p.y > H + 5){ p.y = -5; p.x = Math.random()*W; }
+          if(p.x > W + 5){ p.x = -5; }
+          if(p.x < -5){ p.x = W + 5; }
+          ctx.beginPath();
+          ctx.fillStyle = p.c;
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+          ctx.fill();
+        }
+        requestAnimationFrame(tick);
+      }
+      tick();
+    })();
+
+    // Testimonials carousel
+    (function(){
+      const items = Array.from(document.querySelectorAll('#testimonials .carousel-item'));
+      let idx = 0;
+      function show(i){
+        items.forEach((el, j)=> el.classList.toggle('active', i===j));
+      }
+      function next(){ idx = (idx+1)%items.length; show(idx); }
+      function prev(){ idx = (idx-1+items.length)%items.length; show(idx); }
+      document.querySelector('[data-test-next]').addEventListener('click', next);
+      document.querySelector('[data-test-prev]').addEventListener('click', prev);
+      setInterval(next, 4500);
+    })();
+
+    // Accordion toggles
+    document.querySelectorAll('[data-acc]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const content = btn.nextElementSibling;
+        if(!content) return;
+        const open = content.style.maxHeight && content.style.maxHeight !== '0px';
+        content.style.maxHeight = open ? '0px' : content.scrollHeight + 'px';
+      });
+    });
+
+    // FAQ search
+    const faqSearch = document.getElementById('faqSearch');
+    if(faqSearch){
+      faqSearch.addEventListener('input', () => {
+        const q = faqSearch.value.toLowerCase();
+        document.querySelectorAll('#faqList > div[data-faq]').forEach(card => {
+          const match = card.getAttribute('data-faq').includes(q);
+          card.style.display = match ? '' : 'none';
+        });
+      });
+    }
+
+    // Billing toggle
+    const toggle = document.getElementById('billingToggle');
+    let yearly = false;
+    toggle.addEventListener('click', () => {
+      yearly = !yearly;
+      toggle.querySelector('span').style.left = yearly ? '2.25rem' : '0.25rem';
+      document.querySelectorAll('[data-plan]').forEach(card => {
+        const priceEl = card.querySelector('[data-price]');
+        const id = card.getAttribute('data-plan');
+        const addBtn = card.querySelector('[data-add-cart]');
+        const plan = JSON.parse(addBtn.getAttribute('data-add-cart'));
+        priceEl.textContent = yearly ? plan.yearly.toFixed(2) : plan.monthly.toFixed(2);
+        card.querySelector('.price span.text-sm').textContent = yearly ? '/yr' : '/mo';
+      });
+      // Update cart totals
+      renderCart();
+    });
+
+    // CART
+    let cart = [];
+    function addToCart(plan){
+      const exists = cart.find(i => i.id===plan.id && i.billing === (yearly?'yearly':'monthly'));
+      if(exists){ exists.qty += 1; }
+      else cart.push({ ...plan, billing: yearly?'yearly':'monthly', price: yearly?plan.yearly:plan.monthly, qty:1 });
+      renderCart();
+      location.hash = "#checkout";
+    }
+    document.querySelectorAll('[data-add-cart]').forEach(btn => {
+      btn.addEventListener('click', () => addToCart(JSON.parse(btn.getAttribute('data-add-cart'))));
+    });
+
+    const cartList = document.getElementById('cartList');
+    const subTotal = document.getElementById('subTotal');
+    const discountAmt = document.getElementById('discountAmt');
+    const grandTotal = document.getElementById('grandTotal');
+    let couponApplied = null;
+
+    function renderCart(){
+      if(!cartList) return;
+      cartList.innerHTML = '';
+      if(cart.length === 0){
+        cartList.innerHTML = '<div class="text-white/60">Your cart is empty. Choose a plan to begin.</div>';
+      }else{
+        cart.forEach((item, idx) => {
+          const row = document.createElement('div');
+          row.className = 'glass rounded-xl p-3 flex items-center justify-between';
+          row.innerHTML = `
+            <div>
+              <div class="font-semibold">${item.name} <span class="text-xs text-white/60">(${item.billing})</span></div>
+              <div class="text-xs text-white/60">${item.ram} • ${item.players} players</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="btn px-3" data-dec="${idx}">-</button>
+              <div class="w-8 text-center">${item.qty}</div>
+              <button class="btn px-3" data-inc="${idx}">+</button>
+              <div class="w-20 text-right">${fmt(item.price*item.qty)}</div>
+              <button class="btn px-3" data-del="${idx}">x</button>
+            </div>
+          `;
+          cartList.appendChild(row);
+        });
+
+        cartList.querySelectorAll('[data-inc]').forEach(b=>b.addEventListener('click', e => { cart[+e.target.getAttribute('data-inc')].qty++; renderCart(); }));
+        cartList.querySelectorAll('[data-dec]').forEach(b=>b.addEventListener('click', e => { const i=+e.target.getAttribute('data-dec'); cart[i].qty=Math.max(1, cart[i].qty-1); renderCart(); }));
+        cartList.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click', e => { cart.splice(+e.target.getAttribute('data-del'),1); renderCart(); }));
+      }
+      const subtotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
+      let discount = 0;
+      if(couponApplied === 'VOID10') discount = subtotal * 0.10;
+      subTotal.textContent = fmt(subtotal);
+      discountAmt.textContent = "-"+fmt(discount);
+      grandTotal.textContent = fmt(Math.max(0, subtotal - discount));
+    }
+    renderCart();
+
+    document.getElementById('applyCoupon').addEventListener('click', ()=>{
+      const c = document.getElementById('coupon').value.trim().toUpperCase();
+      couponApplied = (c === 'VOID10') ? 'VOID10' : null;
+      renderCart();
+      alert(couponApplied ? 'Coupon applied: 10% off' : 'Invalid coupon');
+    });
+
+    document.getElementById('makePayment').addEventListener('click', ()=>{
+      if(cart.length === 0) { alert('Your cart is empty.'); return; }
+      const pay = document.querySelector('input[name="pay"]:checked')?.value || 'PayPal';
+      const total = grandTotal.textContent;
+      // Open receipt window
+      const w = window.open('', '_blank');
+      if(!w) { alert('Popup blocked. Please allow popups to view receipt.'); return; }
+      const orderId = 'VC-' + Math.random().toString(36).slice(2,8).toUpperCase();
+      w.document.write(`
+        <html><head><title>VOID CLOUD — Receipt</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <style>
+            body{font-family:Inter, Arial; background:#0e0e18; color:#e7e8ff; padding:28px}
+            .card{background:#121226; border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:18px; max-width:640px; margin:20px auto}
+            .btn{display:inline-block; background:#1a1a33; padding:10px 14px; border-radius:10px; color:#e7e8ff; text-decoration:none; border:1px solid rgba(255,255,255,.08)}
+          </style>
+        </head>
+        <body>
+          <h2>SOON!</h2>
+          <div class="card">
+            <div><strong>Order:</strong> ${orderId}</div>
+            <div><strong>Method:</strong> ${pay}</div>
+            <div><strong>Total:</strong> ${total}</div>
+            <div style="margin-top:10px; font-size:14px; color:#b9bbd3">Join discord for payment.</div>
+          </div>
+          <a class="btn" href="javascript:window.close()">Close</a>
+        </body></html>
+      `);
+      w.document.close();
+
+      // Simulate auto-deployment into Panel Demo
+      simulateDeployment();
+      // Clear cart after "payment"
+      cart = [];
+      couponApplied = null;
+      renderCart();
+      alert('Payment complete (Demo). Deploying your server to the Panel Demo...');
+      location.hash = "#panel";
+    });
+
+    function simulateDeployment(){
+      // Append server to backups list and console logs, mark status online
+      const consoleEl = document.getElementById('console');
+      const statusEl = document.getElementById('srvStatus');
+      consoleEl.innerHTML += `<div>[${new Date().toLocaleTimeString()}] Deploying server...</div>`;
+      setTimeout(()=>{
+        consoleEl.innerHTML += `<div>[${new Date().toLocaleTimeString()}] Pulling image minecraft:latest...</div>`;
+      }, 800);
+      setTimeout(()=>{
+        consoleEl.innerHTML += `<div>[${new Date().toLocaleTimeString()}] Server started successfully on port 25565.</div>`;
+        statusEl.textContent = "Online";
+        statusEl.className = "tag bg-emerald-400/10 text-emerald-300 border-emerald-400/30";
+        // Boost metrics
+        document.getElementById('metCpu').textContent = 12;
+        document.getElementById('metRam').textContent = 24;
+        document.getElementById('metPlr').textContent = 0;
+      }, 1700);
+    }
+
+    // Panel demo interactions
+    const consoleEl = document.getElementById('console');
+    function logLine(text){ consoleEl.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${text}</div>`; consoleEl.scrollTop = consoleEl.scrollHeight; }
+    let running = false;
+    function rand(n){ return Math.floor(Math.random()*n); }
+
+    document.getElementById('btnStart').addEventListener('click', ()=>{
+      if(running) return logLine('Server already running.');
+      running = true; logLine('Starting server...'); document.getElementById('srvStatus').textContent = 'Starting';
+      setTimeout(()=>{ document.getElementById('srvStatus').textContent='Online'; document.getElementById('srvStatus').className="tag bg-emerald-400/10 text-emerald-300 border-emerald-400/30"; logLine('Server is now online.'); }, 900);
+    });
+    document.getElementById('btnStop').addEventListener('click', ()=>{
+      if(!running) return logLine('Server already stopped.');
+      running = false; document.getElementById('srvStatus').textContent='Stopping'; logLine('Stopping server...');
+      setTimeout(()=>{ document.getElementById('srvStatus').textContent='Stopped'; document.getElementById('srvStatus').className="tag"; logLine('Server is now stopped.'); }, 900);
+    });
+    document.getElementById('btnRestart').addEventListener('click', ()=>{
+      if(!running) return logLine('Server is not running.');
+      logLine('Restarting server...'); document.getElementById('srvStatus').textContent='Restarting';
+      setTimeout(()=>{ document.getElementById('srvStatus').textContent='Online'; logLine('Server is back online.'); }, 1200);
+    });
+    document.getElementById('sendCmd').addEventListener('click', ()=>{
+      const cmd = document.getElementById('cmd').value.trim();
+      if(!cmd) return;
+      logLine('> ' + cmd);
+      document.getElementById('cmd').value = '';
+    });
+    // Fake metrics tick
+    setInterval(()=>{
+      if(!running) return;
+      document.getElementById('metCpu').textContent = 8 + rand(15);
+      document.getElementById('metRam').textContent = 18 + rand(20);
+      document.getElementById('metPlr').textContent = rand(12);
+    }, 1800);
+
+    // Panel actions
+    document.getElementById('oneClickMod').addEventListener('click', ()=>{
+      logLine('Installing modpack: BetterMC...');
+      setTimeout(()=> logLine('Modpack installed.'), 1200);
+    });
+    document.getElementById('createBackup').addEventListener('click', ()=>{
+      const list = document.getElementById('backups');
+      const id = 'backup_' + Math.random().toString(36).slice(2,6);
+      list.innerHTML = `<div>${id} — ${new Date().toLocaleString()}</div>` + list.innerHTML;
+      logLine('Backup created: '+id);
+    });
+    document.getElementById('openFiles').addEventListener('click', ()=>{
+      logLine('Opening file manager (demo)...');
+    });
+    document.getElementById('demoTry').addEventListener('click', ()=>{
+      simulateDeployment();
+      location.hash = "#panel";
+    });
+    document.getElementById('viewDash').addEventListener('click', ()=>{
+      alert('This is a demo panel. Connect Pterodactyl/WHMCS in a real deployment.');
+    });
+
+    // Live chat mock
+    const chat = document.getElementById('chatWidget');
+    document.getElementById('openChat').addEventListener('click', ()=> chat.classList.remove('hidden'));
+    document.getElementById('closeChat').addEventListener('click', ()=> chat.classList.add('hidden'));
+    document.getElementById('chatSend').addEventListener('click', ()=>{
+      const input = document.getElementById('chatInput');
+      const msg = input.value.trim();
+      if(!msg) return;
+      const box = document.getElementById('chatMsgs');
+      box.innerHTML += `<div class="text-right"><span class="tag bg-[color:var(--accent)]/20 border-[color:var(--accent)]/30">${msg}</span></div>`;
+      input.value = '';
+      setTimeout(()=>{
+        const reply = /price|plan/i.test(msg) ? 'You can switch Monthly/Yearly at any time. Try coupon VOID10 for 10% off!' :
+                      /support|help/i.test(msg) ? 'Our support is 24/7. Create a ticket from the Support page.' :
+                      'Thanks! Let me know if you have questions about features or pricing.';
+        box.innerHTML += `<div><span class="tag bg-white/10">${reply}</span></div>`;
+        box.scrollTop = box.scrollHeight;
+      }, 600);
+      box.scrollTop = box.scrollHeight;
+    });
+
+    // Contact demo
+    document.getElementById('sendContact').addEventListener('click', ()=>{
+      const name = document.getElementById('cName').value.trim();
+      const email = document.getElementById('cEmail').value.trim();
+      const msg = document.getElementById('cMsg').value.trim();
+      if(!name || !email || !msg) return alert('Please fill out all fields.');
+      alert('Thanks, '+name+'! Your (demo) message has been received.');
+      document.getElementById('cName').value = '';
+      document.getElementById('cEmail').value = '';
+      document.getElementById('cMsg').value = '';
+    });
+
+    // Auth demo (no password fields, just external buttons)
+    document.getElementById('loginGoogle').addEventListener('click', ()=> alert('Google sign-in is not available in this demo.'));
+    document.getElementById('loginDiscord').addEventListener('click', ()=> alert('Discord sign-in is not available in this demo.'));
+
+    // Footer year
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97df06c3e53c7674',t:'MTc1NzY3NjE0MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
